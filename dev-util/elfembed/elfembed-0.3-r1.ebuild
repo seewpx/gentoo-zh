@@ -11,7 +11,7 @@ SRC_URI="mirror://sourceforge/${PN}/${P}.tar.gz"
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="x86 ~amd64"
+KEYWORDS="~amd64 x86"
 IUSE=""
 
 DEPEND=""
@@ -28,7 +28,6 @@ src_compile(){
 
 src_install(){
 	dodir /usr/bin
-	install rc ${D}/usr/bin/rc
-	install re ${D}/usr/bin/re
-
+	install rc "${D}/usr/bin/rc"
+	install re "${D}/usr/bin/re"
 }

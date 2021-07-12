@@ -3,17 +3,16 @@
 
 EAPI=7
 
-inherit cmake git-r3 gnome2-utils xdg-utils
-EGIT_REPO_URI="https://github.com/fcitx/fcitx5-gtk.git"
+inherit cmake gnome2-utils xdg
 
 if [[ "${PV}" == 9999 ]]; then
+	inherit git-r3
+	EGIT_REPO_URI="https://github.com/fcitx/fcitx5-gtk.git"
 	KEYWORDS=""
 else
+	SRC_URI="https://github.com/fcitx/fcitx5-gtk/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~x86"
-	EGIT_COMMIT="${PV}"
 fi
-
-SRC_URI=""
 
 DESCRIPTION="Gtk im module for fcitx5 and glib based dbus client library"
 HOMEPAGE="https://github.com/fcitx/fcitx5-gtk"
@@ -48,21 +47,14 @@ src_configure() {
 	cmake_src_configure
 }
 
-src_install(){
-	cmake_src_install
-}
 pkg_postinst() {
-	xdg_icon_cache_update
-	xdg_desktop_database_update
-	xdg_mimeinfo_database_update
+	xdg_pkg_postinst
 	use gtk2 && gnome2_query_immodules_gtk2
 	use gtk3 && gnome2_query_immodules_gtk3
 }
 
 pkg_postrm() {
-	xdg_icon_cache_update
-	xdg_desktop_database_update
-	xdg_mimeinfo_database_update
+	xdg_pkg_postrm
 	use gtk2 && gnome2_query_immodules_gtk2
 	use gtk3 && gnome2_query_immodules_gtk3
 }

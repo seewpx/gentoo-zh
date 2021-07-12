@@ -3,17 +3,16 @@
 
 EAPI=7
 
-inherit cmake git-r3
-EGIT_REPO_URI="https://github.com/fcitx/fcitx5-qt.git"
+inherit cmake
 
 if [[ "${PV}" == 9999 ]]; then
+	inherit git-r3
+	EGIT_REPO_URI="https://github.com/fcitx/fcitx5-qt.git"
 	KEYWORDS=""
 else
+	SRC_URI="https://github.com/fcitx/fcitx5-qt/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~x86"
-	EGIT_COMMIT="${PV}"
 fi
-
-SRC_URI=""
 
 DESCRIPTION="Qt library and IM module for fcitx5"
 HOMEPAGE="https://github.com/fcitx/fcitx5-qt"
@@ -33,10 +32,6 @@ RDEPEND="app-i18n/fcitx5
 DEPEND="${RDEPEND}
 	virtual/pkgconfig"
 
-src_prepare() {
-	cmake_src_prepare
-}
-
 src_configure() {
 	local mycmakeargs=(
 		-DCMAKE_INSTALL_SYSCONFDIR="${EPREFIX}/etc"
@@ -47,8 +42,4 @@ src_configure() {
 		-DBUILD_ONLY_PLUGIN=$(usex only_plugin)
 	)
 	cmake_src_configure
-}
-
-src_install(){
-	cmake_src_install
 }

@@ -15,9 +15,6 @@ SLOT="0"
 KEYWORDS=""
 
 DEPEND=">=dev-libs/boost-1.49[threads,static-libs]
-		dev-libs/openssl 
+		dev-libs/openssl
 		media-libs/libsdl"
 RDEPEND="${DEPEND}"
-
-
-

@@ -1,5 +1,6 @@
 # Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
+
 EAPI=6
 
 inherit autotools
@@ -10,7 +11,7 @@ SRC_URI="http://github.com/yetist/lunar-date/archive/v${PV}.tar.gz -> ${P}.tar.g
 
 LICENSE="GPL-2"
 SLOT="0"
-KEYWORDS="x86 amd64"
+KEYWORDS="amd64 x86"
 IUSE="doc python"
 
 RDEPEND="${RDEPEND}
@@ -41,4 +42,3 @@ src_compile(){
 src_install() {
 	emake DESTDIR="${D}" install || die "make install failed"
 }
-

@@ -3,14 +3,13 @@
 
 EAPI=7
 
-
 DESCRIPTION="A fast, proxy smart selector"
 HOMEPAGE="https://github.com/microcai/smartproxy"
 
 EGIT_REPO_URI="https://github.com/microcai/smartproxy"
 EGIT_COMMIT="v${PV}"
 
-inherit cmake-utils git-r3
+inherit cmake git-r3
 #SRC_URI="https://github.com/microcai/smartproxy/archive/v${PV}.tar.gz -> ${P}.tar.gz"
 
 LICENSE="GPL-3+"
@@ -29,5 +28,5 @@ src_configure(){
 	local mycmakeargs=(
 		-DUSE_SYSTEM_OPENSSL=ON
 	)
-	cmake-utils_src_configure
+	cmake_src_configure
 }

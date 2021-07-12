@@ -3,17 +3,19 @@
 
 EAPI=7
 
-inherit cmake gnome2-utils xdg git-r3
-EGIT_REPO_URI="https://github.com/fcitx/fcitx5-chinese-addons.git"
+inherit cmake xdg
 
 if [[ "${PV}" == 9999 ]]; then
+	inherit git-r3
+	EGIT_REPO_URI="https://github.com/fcitx/fcitx5-chinese-addons.git"
 	KEYWORDS=""
 else
+	SRC_URI="https://github.com/fcitx/fcitx5-chinese-addons/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz"
 	KEYWORDS="~amd64 ~x86"
-	EGIT_COMMIT="${PV}"
 fi
 
-SRC_URI="https://download.fcitx-im.org/data/py_stroke-20121124.tar.gz -> fcitx-data-py_stroke-20121124.tar.gz
+SRC_URI+="
+https://download.fcitx-im.org/data/py_stroke-20121124.tar.gz -> fcitx-data-py_stroke-20121124.tar.gz
 https://download.fcitx-im.org/data/py_table-20121124.tar.gz -> fcitx-data-py_table-20121124.tar.gz
 "
 
@@ -45,7 +47,6 @@ src_prepare() {
 	ln -s "${DISTDIR}/fcitx-data-py_stroke-20121124.tar.gz" modules/pinyinhelper/py_stroke-20121124.tar.gz || die
 	ln -s "${DISTDIR}/fcitx-data-py_table-20121124.tar.gz" modules/pinyinhelper/py_table-20121124.tar.gz || die
 	cmake_src_prepare
-	xdg_environment_reset
 }
 
 src_configure() {
@@ -58,8 +59,4 @@ src_configure() {
 		-DUSE_WEBKIT=no
 	)
 	cmake_src_configure
-}
-
-src_install(){
-	cmake_src_install
 }
