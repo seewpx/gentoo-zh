@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>zakk@gentoozh.org</email>
+		<name>Zakk</name>
+	</maintainer>
+	<use>
+		<flag name="clash-api">Enable the Clash-compatible REST and WebSocket API</flag>
+		<flag name="jemalloc">Use the jemalloc allocator, linked against <pkg>dev-libs/jemalloc</pkg> on glibc systems, instead of the libc allocator</flag>
+		<flag name="native-api">Enable the honk native API and the configuration database</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">daeuniverse/honk</remote-id>
+	</upstream>
+</pkgmetadata>

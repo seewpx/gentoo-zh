@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>2073201758GD@gmail.com</email>
+		<name>liuyujielol</name>
+	</maintainer>
+	<use>
+		<flag name="lto">Enable Link Time Optimization</flag>
+		<flag name="bench">Enable Bench Protocol</flag>
+		<flag name="standard">Enable Standard Features</flag>
+		<flag name="plus">Enable Plus Features, standard + onion</flag>
+		<flag name="perf">Enable Perf Features, plus + jemallocator</flag>
+	</use>
+	<upstream>
+		<remote-id type="github">Watfaq-legacy/clash-rs</remote-id>
+	</upstream>
+</pkgmetadata>

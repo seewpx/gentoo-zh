@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<name>ston</name>
+		<email>ston.jia@qq.com</email>
+	</maintainer>
+	<upstream>
+		<remote-id type="github">Fitzgerald-Porthmouth-Koenigsegg/Plangothic_Project</remote-id>
+	</upstream>
+	<use>
+		<flag name="otf">OpenType format for this font (default)</flag>
+		<flag name="static">TTF format for this font</flag>
+		<flag name="web">WOFF2 format for this font</flag>
+	</use>
+</pkgmetadata>

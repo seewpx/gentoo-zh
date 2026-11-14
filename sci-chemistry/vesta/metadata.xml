@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="person">
+		<email>chn@chn.moe</email>
+		<name>Haonan Chen</name>
+	</maintainer>
+	<use>
+		<flag name="powderplot">Install the bundled PowderPlot tool, which plots powder diffraction patterns produced by RIETAN</flag>
+	</use>
+</pkgmetadata>

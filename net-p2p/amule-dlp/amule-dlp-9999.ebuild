@@ -1,113 +1,98 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2026 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
+WX_GTK_VER="3.2-gtk3"
 
-WX_GTK_VER="3.0"
-inherit autotools eutils flag-o-matic wxwidgets user git-r3
+PYTHON_COMPAT=( python3_{12..15} )
 
+inherit cmake flag-o-matic python-any-r1 wxwidgets xdg git-r3
 
 DESCRIPTION="aMule with DLP patch, the all-platform eMule p2p client"
 HOMEPAGE="https://github.com/persmule/amule-dlp"
-EGIT_REPO_URI="https://github.com/persmule/amule-dlp.git"
+EGIT_REPO_URI="https://github.com/persmule/amule-dlp"
 
-LICENSE="GPL-2"
+LICENSE="GPL-2+"
 SLOT="0"
-KEYWORDS=""
-IUSE="daemon debug +dynamic geoip +gtk nls remote stats unicode upnp"
-REQUIRED_USE="|| ( gtk remote daemon )"
+IUSE="daemon debug geoip nls remote stats upnp +X"
 
-DEPEND="
-	x11-libs/wxGTK:${WX_GTK_VER}
-	>=dev-libs/boost-1.57[nls,threads,context]
-	>=dev-libs/crypto++-5
-	>=sys-libs/zlib-1.2.1
-	stats? ( >=media-libs/gd-2.0.26[jpeg] )
-	geoip? ( dev-libs/geoip )
-	upnp? ( >=net-libs/libupnp-1.6.6 )
-	remote? ( >=media-libs/libpng-1.2.0
-	unicode? ( >=media-libs/gd-2.0.26 ) )
+REQUIRED_USE="|| ( daemon remote X )"
+
+RDEPEND="
+	dev-libs/boost:=
+	dev-libs/crypto++:=
+	net-misc/curl
+	sys-libs/binutils-libs:0=
+	sys-libs/readline:0=
+	virtual/zlib:=
+	x11-libs/wxGTK:${WX_GTK_VER}=[curl,X?]
+	daemon? (
+		acct-user/amule
+		dev-libs/glib:2
+	)
+	geoip? ( dev-libs/libmaxminddb )
+	nls? ( virtual/libintl )
+	remote? (
+		acct-user/amule
+		media-libs/libpng:0=
+	)
+	stats? ( media-libs/gd:=[jpeg,png] )
+	upnp? ( net-libs/libupnp:0= )
+	X? ( dev-libs/glib:2 )
 	!net-p2p/amule
 "
-RDEPEND="${DEPEND} dynamic? ( net-p2p/amule-dlp-antileech )"
+DEPEND="${RDEPEND}"
+BDEPEND="
+	${PYTHON_DEPS}
+	virtual/pkgconfig
+	nls? ( sys-devel/gettext )
+"
 
-DOCS=( docs/{amulesig.txt,AUTHORS,ChangeLog,EC_Protocol.txt,ED2K-Links.HOWTO,INSTALL,README,TODO} )
-
-pkg_setup() {
-	if use stats && ! use gtk; then
-		einfo "Note: You would need both the gtk and stats USE flags"
-		einfo "to compile aMule Statistics GUI."
-		einfo "I will now compile console versions only."
-	fi
-}
-
-pkg_preinst() {
-	if use daemon || use remote; then
-		enewgroup p2p
-		enewuser p2p -1 -1 /home/p2p p2p
-	fi
-}
-
-src_prepare() {
-	default
-
-	# fix the missing amule.xpm
-	cp "${FILESDIR}/amule.xpm" ./
-
-	# hack because of non-standard generation
-	cd src/pixmaps/flags_xpm
-	./makeflags.sh
-	cd "$OLDPWD"
-
-	WANT_AUTOCONF="2.5" eautoreconf
-	WANT_AUTOMAKE="1.7" eautomake
-
-	epatch "${FILESDIR}/amule-dlp-scanner-header.patch"
-}
+PATCHES=(
+	"${FILESDIR}"/amule-dlp-reload-antileech-without-geoip.patch
+)
 
 src_configure() {
-	local myconf
+	setup-wxwidgets
 
-	if use gtk; then
-		einfo "wxGTK with X / GTK support will be used"
-		need-wxwidgets unicode
+	use debug || append-cppflags -DwxDEBUG_LEVEL=0
+	CMAKE_BUILD_TYPE=$(usex debug Debug ${CMAKE_BUILD_TYPE})
+
+	local mycmakeargs=(
+		-DAMULE_DLP=YES
+		-DBUILD_ALCC=YES
+		-DBUILD_ED2K=YES
+		-DBUILD_ALC="$(usex X)"
+		-DBUILD_AMULECMD="$(usex remote)"
+		-DBUILD_DAEMON="$(usex daemon)"
+		-DBUILD_CAS="$(usex stats)"
+		-DBUILD_MONOLITHIC="$(usex X)"
+		-DBUILD_TESTING=NO
+		-DBUILD_WEBSERVER="$(usex remote)"
+		-DENABLE_BFD=YES
+		-DENABLE_IP2COUNTRY="$(usex geoip)"
+		-DENABLE_NLS="$(usex nls)"
+		-DENABLE_UPNP="$(usex upnp)"
+		-DENABLE_VERSION_CHECK=NO
+	)
+
+	if use X; then
+		mycmakeargs+=(
+			-DBUILD_REMOTEGUI="$(usex remote)"
+			-DBUILD_WXCAS="$(usex stats)"
+		)
 	else
-		einfo "wxGTK without X support will be used"
-		need-wxwidgets base-unicode
+		mycmakeargs+=(
+			-DBUILD_REMOTEGUI=NO
+			-DBUILD_WXCAS=NO
+		)
 	fi
 
-	if use gtk ; then
-		use stats && myconf="${myconf}
-			--enable-wxcas
-			--enable-alc"
-		use remote && myconf="${myconf}
-			--enable-amule-gui"
-	else
-		myconf="
-			--disable-monolithic
-			--disable-amule-gui
-			--disable-wxcas
-			--disable-alc"
-	fi
-
-	econf \
-		--with-wx-config=${WX_CONFIG} \
-		--with-boost \
-		--enable-amulecmd \
-		$(use_enable debug) \
-		$(use_enable !debug optimize) \
-		$(use_enable daemon amule-daemon) \
-		$(use_enable geoip) \
-		$(use_enable nls) \
-		$(use_enable remote webserver) \
-		$(use_enable stats cas) \
-		$(use_enable stats alcc) \
-		$(use_enable upnp) \
-		${myconf} || die
+	cmake_src_configure
 }
 
 src_install() {
-	emake DESTDIR="${D}" install || die
+	cmake_src_install
 
 	if use daemon; then
 		newconfd "${FILESDIR}"/amuled.confd amuled

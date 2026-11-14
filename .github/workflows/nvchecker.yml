@@ -1,0 +1,127 @@
+name: nvchecker
+
+on:
+  workflow_call:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  eix:
+    if: github.repository == 'gentoo-zh/overlay'
+    runs-on: ubuntu-latest
+    container:
+      image: gentoo/stage3
+      options: --privileged
+    outputs:
+      pkgs: ${{ steps.eix.outputs.pkgs }}
+    steps:
+    - name: sync gentoo main tree
+      run: |
+        emerge-webrsync --no-pgp-verify
+
+    - name: setup features
+      run: |
+        echo 'FEATURES="getbinpkg"' >> /etc/portage/make.conf
+        getuto
+
+    - name: install depends
+      run: |
+        emerge --verbose --quiet --jobs "$(nproc)" --autounmask y --autounmask-continue y \
+        app-portage/eix \
+        dev-vcs/git
+
+    # eselect repository fetches repositories.xml from api.gentoo.org, which the runner
+    # sometimes resolves to IPv6 only and cannot reach
+    - name: setup gentoo git repo
+      run: |
+        mkdir -p /etc/portage/repos.conf
+        cat > /etc/portage/repos.conf/gentoo.conf << EOF
+        [gentoo]
+        location = /var/db/repos/gentoo
+        sync-type = git
+        sync-uri = https://github.com/gentoo-mirror/gentoo.git
+        EOF
+        rm -rf /var/db/repos/gentoo
+        emaint sync -r gentoo
+
+    - name: checkout
+      uses: actions/checkout@v7
+
+    - name: run eix
+      id: eix
+      run: scripts/nvchecker-eix.sh
+
+  nvchecker:
+    needs: eix
+    runs-on: ubuntu-latest
+    outputs:
+      nvcmp: ${{ steps.nvchecker.outputs.nvcmp }}
+    steps:
+    - name: checkout
+      uses: actions/checkout@v7
+
+    - name: install depends
+      run: |
+        pip install nvchecker jq portage
+
+    - name: run nvchecker
+      id: nvchecker
+      env:
+        GITHUB_TOKEN: ${{ secrets.GENTOO_ZH_NVCHECKER_PAT }}
+        PACKAGES: ${{ needs.eix.outputs.pkgs }}
+        NVCHECKER_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -o pipefail
+        echo "::group::nvchecker"
+        cd .github/workflows/
+        printf '%s\n' "$PACKAGES" > old_ver.json
+        printf '[keys]\ngithub = "%s"\n' "$NVCHECKER_TOKEN" > keyfile.toml
+        nvchecker --file overlay.toml --keyfile keyfile.toml
+        echo "::endgroup::"
+
+        echo "::group::check versions"
+        ../../scripts/nvchecker-check.py overlay.toml old_ver.json new_ver.json
+        echo "::endgroup::"
+
+        echo "::group::nvcmp"
+        # Tree oldver needs --sort portage: PEP440 misreads _p/_rc and reports downgrades as updates.
+        nvcmp=$(nvcmp --file overlay.toml --json --newer --sort portage \
+          | jq -c 'map({name, newver, oldver})')
+        echo "nvcmp=${nvcmp}" >> "$GITHUB_OUTPUT"
+        echo "::endgroup::"
+
+  issues-bumper:
+    needs: nvchecker
+    if: needs.nvchecker.outputs.nvcmp != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.nvchecker.outputs.nvcmp) }}
+    steps:
+    - name: checkout bumpbot
+      uses: actions/checkout@v7
+      with:
+        repository: 'gentoo-zh-drafts/bumpbot'
+
+    - name: checkout gentoo-zh
+      uses: actions/checkout@v7
+      with:
+        path: 'gentoo-zh'
+
+    - name: update issues
+      timeout-minutes: 1
+      env:
+        NAME: ${{ matrix.name }}
+        NEWVER: ${{ matrix.newver }}
+        OLDVER: ${{ matrix.oldver }}
+        # a personal token has its own API rate limit, which the shared GITHUB_TOKEN kept hitting
+        GITHUB_TOKEN: ${{ secrets.GENTOO_ZH_NVCHECKER_PAT }}
+      run: |
+        go run . --file gentoo-zh/.github/workflows/overlay.toml --name "$NAME" --newver "$NEWVER" --oldver "$OLDVER"

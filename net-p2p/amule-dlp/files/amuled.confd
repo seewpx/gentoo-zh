@@ -1,13 +1,13 @@
-# Copyright 1999-2005 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-# $Header: /var/cvsroot/gentoo-x86/net-p2p/amule/files/amuled.confd,v 1.1 2005/07/10 15:02:47 chainsaw Exp $
+# User, group and home directory of amuled. It reads its configuration
+# from ${AMULE_HOME}/.aMule/amule.conf.
+#AMULE_USER="amule"
+#AMULE_GROUP="amule"
+#AMULE_HOME="/var/lib/amule"
 
-# owner of amuled process (must be existing)
-AMULEUSER="p2p"
+# amuled exits until external connections are enabled. Start it once to
+# create ${AMULE_HOME}/.aMule/amule.conf, then set in that file:
+#   AcceptExternalConnections=1
+#   ECPassword=<output of: printf %s 'password' | md5sum | cut -d' ' -f1>
 
-# home directory for amuled (must be existing)
-AMULEHOME="/home/p2p"
-
-# log file (/dev/null for nowhere)
-LOG=/var/log/amuled.log
-
+# Additional options for amuled.
+#AMULED_OPTS=""

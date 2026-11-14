@@ -1,40 +1,41 @@
 # Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-DESCRIPTION="jzmq"
-HOMEPAGE="http://www.zeromq.org/bindings:java"
+EAPI=7
+
+inherit git-r3 autotools
+DESCRIPTION="Java bindings for ZeroMQ"
+HOMEPAGE="https://zeromq.org/languages/java/"
 
 if [[ ${PV} == "9999" ]] ; then
 	EGIT_REPO_URI="https://github.com/zeromq/jzmq.git"
 	vcs=git-r3
-else
-	SRC_URI=""
-	KEYWORDS=""
 fi
+S="${WORKDIR}/${P}/${PN}-jni"
 
-LICENSE="LGPL-3"
+LICENSE="LGPL-3+"
 SLOT="0"
-KEYWORDS=""
-IUSE=""
 
-RDEPEND=""
-DEPEND="net-libs/zeromq"
+DEPEND="net-libs/zeromq
+	>=virtual/jre-1.7:*"
+RDEPEND="${DEPEND}"
 
 src_prepare() {
-	eaclocal
-	eautoconf
+	default
+	if [[ -e configure.in ]]; then
+		mv configure.in configure.ac || die
+	fi
+	eautoreconf
 }
 
 src_configure() {
-	echo "configure"
 	PATH=/etc/java-config-2/current-system-vm/bin:$PATH
 	PKG_CONFIG=/usr/lib64/pkgconfig/
-	eautomake
 	econf
-	make
 }
 
 src_install() {
 	emake DESTDIR="${D}" install || die "emake install failed"
-	dodoc README ChangeLog || die "dodoc failed"
+	rm -f "${ED}"/usr/share/doc/${PF}/{README,ChangeLog} || die
+	dodoc ../README.md ../Changelog.md || die "dodoc failed"
 }

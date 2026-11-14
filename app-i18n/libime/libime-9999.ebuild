@@ -1,56 +1,80 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2025 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
-inherit cmake gnome2-utils xdg-utils git-r3
+inherit cmake git-r3
+
+DESCRIPTION="Fcitx5 Next generation of fcitx"
+HOMEPAGE="https://fcitx-im.org/"
 EGIT_REPO_URI="https://github.com/fcitx/libime.git"
 
-if [[ "${PV}" == 9999* ]]; then
-	KEYWORDS=""
-else
-	KEYWORDS="~amd64 ~x86"
-	EGIT_COMMIT="${PV}"
-fi
-_kenlmcommit="01c49fe86714276f77be9278d00906fc994256c1"
+LM_VER="20260629"
+DICT_VER="20260907"
+TABLE_VER="20240108"
 
-SRC_URI="https://download.fcitx-im.org/data/lm_sc.3gm.arpa-20140820.tar.bz2 -> fcitx5-lm_sc.3gm.arpa-20140820.tar.bz2
-https://download.fcitx-im.org/data/dict.utf8-20210402.tar.xz -> fcitx5-dict.utf8-20210402.tar.xz
-https://download.fcitx-im.org/data/table.tar.gz -> fcitx5-table.tar.gz
-https://github.com/kpu/kenlm/archive/${_kenlmcommit}.tar.gz -> kenlm.tar.gz
+SRC_URI="
+	data? (
+		https://download.fcitx-im.org/data/lm_sc.arpa-${LM_VER}.tar.zst
+		https://download.fcitx-im.org/data/dict-${DICT_VER}.tar.zst
+		https://download.fcitx-im.org/data/table-${TABLE_VER}.tar.zst
+	)
 "
 
-DESCRIPTION="Fcitx5 Next generation of fcitx "
-HOMEPAGE="https://fcitx-im.org/ https://gitlab.com/fcitx/libime"
-
-LICENSE="BSD-1 GPL-2+ LGPL-2+ MIT"
+LICENSE="LGPL-2.1+"
 SLOT="5"
-IUSE=""
-REQUIRED_USE=""
+KEYWORDS=""
+IUSE="+data doc test"
+RESTRICT="!test? ( test )"
+RDEPEND="
+	>=app-i18n/fcitx-5.1.20:5
+	app-arch/zstd:=
+	dev-libs/boost:=
+"
+DEPEND="${RDEPEND}"
+BDEPEND="
+	kde-frameworks/extra-cmake-modules:0
+	virtual/pkgconfig
+	app-arch/zstd
+	doc? (
+		app-text/doxygen
+		dev-texlive/texlive-fontutils
+	)
+"
 
-RDEPEND="app-i18n/fcitx5"
-DEPEND="${RDEPEND}
-	dev-libs/boost
-	kde-frameworks/extra-cmake-modules:5
-	virtual/pkgconfig"
+src_unpack() {
+	git-r3_src_unpack
+
+	if use data; then
+		mkdir -p "${S}/data" || die
+		cp "${DISTDIR}/lm_sc.arpa-${LM_VER}.tar.zst" "${S}/data/" || die
+		cp "${DISTDIR}/dict-${DICT_VER}.tar.zst" "${S}/data/" || die
+		cp "${DISTDIR}/table-${TABLE_VER}.tar.zst" "${S}/data/" || die
+	fi
+}
 
 src_prepare() {
-	ln -s "${DISTDIR}/fcitx5-lm_sc.3gm.arpa-20140820.tar.bz2" data/lm_sc.3gm.arpa-20140820.tar.bz2 || die
-	ln -s "${DISTDIR}/fcitx5-dict.utf8-20210402.tar.xz" data/dict.utf8-20210402.tar.xz || die
-	ln -s "${DISTDIR}/fcitx5-table.tar.gz" data/table.tar.gz || die
-	tar -xvzf "${DISTDIR}/kenlm.tar.gz" -C src/libime/core/kenlm  || die
+	# 957570 : remove unused kenlm CMakeLists.txt
+	rm src/libime/core/kenlm/CMakeLists.txt || die
+	sed -e '/cmake_minimum_required/s/3\.12/3.16/' -i CMakeLists.txt || die
 	cmake_src_prepare
-	xdg_environment_reset
 }
 
 src_configure() {
 	local mycmakeargs=(
-		-DCMAKE_INSTALL_LIBDIR="${EPREFIX}/usr/$(get_libdir)"
-		-DCMAKE_INSTALL_SYSCONFDIR="${EPREFIX}/etc"
+		-DENABLE_DATA=$(usex data)
+		-DENABLE_DOC=$(usex doc)
+		-DENABLE_TEST=$(usex test)
 	)
 	cmake_src_configure
 }
 
-src_install(){
+src_compile() {
+	cmake_src_compile
+	use doc && cmake_src_compile doc
+}
+
+src_install() {
 	cmake_src_install
+	use doc && dodoc -r "${BUILD_DIR}"/doc/*
 }

@@ -1,29 +1,26 @@
+# Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=9
 
-inherit git-r3
+inherit git-r3 toolchain-funcs
 
 DESCRIPTION="A command-line based markdown presentation tool"
 HOMEPAGE="https://github.com/visit1985/mdp"
-SRC_URI=""
 
 EGIT_REPO_URI="https://github.com/visit1985/mdp.git"
 
-LICENSE="GPL-3"
+LICENSE="GPL-3+"
 SLOT="0"
-KEYWORDS=""
-IUSE=""
 
-DEPEND=""
-RDEPEND="${DEPEND}
-sys-libs/ncurses"
+RDEPEND="sys-libs/ncurses:="
+DEPEND="${RDEPEND}"
+BDEPEND="virtual/pkgconfig"
 
-src_prepare() {
-	# remove the CFLAGS and LDFLAGS defination in Makefile, use default option in make.conf as the binary will be stripped automatically
-	sed -i -e '/CFLAGS[[:space:]]*=/d' -e '/LDFLAGS[[:space:]]*=/d' Makefile
+src_compile() {
+	export CPPFLAGS+=" $($(tc-getPKG_CONFIG) --cflags ncursesw)"
+	emake CC="$(tc-getCC)" LDLIBS="$($(tc-getPKG_CONFIG) --libs ncursesw)"
 }
-
 
 src_install() {
 	dobin mdp

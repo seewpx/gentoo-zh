@@ -1,7 +1,7 @@
 # Copyright 1999-2021 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit git-r3 meson xdg
 
@@ -11,13 +11,12 @@ EGIT_REPO_URI="https://github.com/jonaburg/picom.git"
 
 LICENSE="MPL-2.0 MIT"
 SLOT="0"
-KEYWORDS=""
 IUSE="+config-file dbus +doc +drm opengl pcre"
 
 RDEPEND="dev-libs/libev
 	dev-libs/uthash
 	x11-libs/libX11
-	x11-libs/libxcb
+	x11-libs/libxcb:=
 	x11-libs/libXext
 	x11-libs/pixman
 	x11-libs/xcb-util-image
@@ -30,7 +29,6 @@ RDEPEND="dev-libs/libev
 	drm? ( x11-libs/libdrm )
 	opengl? ( virtual/opengl )
 	pcre? ( dev-libs/libpcre )
-	!x11-misc/compton
 	!x11-misc/picom"
 DEPEND="${RDEPEND}
 	x11-base/xorg-proto"

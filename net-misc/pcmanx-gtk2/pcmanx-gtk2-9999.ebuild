@@ -1,23 +1,31 @@
-# Copyright 1999-2021 Gentoo Authors
+# Copyright 1999-2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=7
+EAPI=8
 
 inherit autotools flag-o-matic git-r3
 
-DESCRIPTION="PCMan is an easy-to-use telnet client mainly targets BBS users formerly writen by gtk2"
+DESCRIPTION="PCMan is a gtk+ based free BBS client"
 HOMEPAGE="https://github.com/pcman-bbs/pcmanx"
-EGIT_REPO_URI="${HOMEPAGE}.git"
 
-KEYWORDS=""
+EGIT_REPO_URI="https://github.com/pcman-bbs/pcmanx.git"
+
+LICENSE="GPL-2+"
 SLOT="0"
-LICENSE="GPL-2"
 IUSE="+libnotify +proxy iplookup +wget"
 
 COMMON_DEPEND="
+	dev-libs/glib:2
+	dev-libs/libltdl
 	libnotify? ( x11-libs/libnotify )
+	media-libs/fontconfig
+	media-libs/freetype
+	x11-libs/cairo
+	x11-libs/gdk-pixbuf:2
+	x11-libs/libX11
 	x11-libs/libXft
-	>=x11-libs/gtk+-2.4
+	x11-libs/pango
+	>=x11-libs/gtk+-2.4:2
 "
 
 RDEPEND="
@@ -31,11 +39,16 @@ DEPEND="
 	sys-devel/gettext
 "
 
+DOCS=( TODO README.md NEWS ChangeLog AUTHORS )
+
 src_prepare() {
 	[[ ! -e ChangeLog && -e ./build/changelog.sh ]] && \
 		./build/changelog.sh > ChangeLog
-	intltoolize --copy --force --automake || die "intltoolize failed"
+
 	eautoreconf
+	pushd libltdl > /dev/null || die
+	eautoreconf
+	popd > /dev/null || die
 
 	# this flag crashes CTermData::memset16()
 	filter-flags -ftree-vectorize
